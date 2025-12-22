@@ -66,20 +66,22 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 script {
-                    // Update kubeconfig to point to your EKS cluster
-                    sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
-                    
-                    // Update the deployment with the new image
-                    // Replace 'capstone-project' with your actual Deployment name if different
-                    sh "kubectl set image deployment/capstone-project capstone-app=${DOCKER_IMAGE} --record"
-                    
-                    // Check rollout status
-                    sh "kubectl rollout status deployment/capstone-project"
-                    
-                    echo "Deployment to EKS successful!"
-                }
-            }
+            // 1. Update Kubeconfig (This uses the EC2 IAM Role we just authorized)
+               sh "aws eks update-kubeconfig --region ap-south-1 --name capstone-project"
+            
+            // 2. Trigger the Rolling Update
+            // This replaces the old image with the one we just built/pushed
+               sh "kubectl set image deployment/capstone-project capstone-app=${DOCKER_IMAGE}"
+            
+            // 3. Monitor the Rollout
+            // Jenkins will wait here until the new pods are Ready. 
+            // If the pods crash, Jenkins will fail the build here!
+               sh "kubectl rollout status deployment/capstone-project"
+            
+               echo "🚀 Deployment to EKS capstone-project successful!"
         }
+    }
+}
 
         stage('Cleanup Local Images') {
             steps {
