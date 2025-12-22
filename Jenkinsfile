@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Docker image details
-        DOCKERHUB_REPO = 'yourusername/your-app-name'  // CHANGE THIS
+        DOCKERHUB_REPO = 'sdfa777/capstone-health-project2'  // CHANGE THIS
         DOCKER_IMAGE   = "${DOCKERHUB_REPO}:${BUILD_NUMBER}"
         DOCKER_LATEST  = "${DOCKERHUB_REPO}:latest"
 
