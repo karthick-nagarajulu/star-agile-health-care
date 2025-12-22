@@ -52,15 +52,21 @@ pipeline {
             steps {
                 echo 'Pushing image to Docker Hub...'
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
-                        sh """
-                        docker push ${DOCKER_IMAGE}
-                        docker push ${DOCKER_LATEST}
-                        """
-                    }
-                }
+                    // Login to Docker Hub using credentials
+                     withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", 
+                                                      usernameVariable: 'DOCKER_USER', 
+                                                      passwordVariable: 'DOCKER_PASS')]) {
+                         sh '''
+                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                         docker push ${DOCKER_IMAGE}
+                         docker push ${DOCKER_LATEST}
+                         docker logout
+                         '''
             }
         }
+    }
+}
+                    
 
         stage('Cleanup Local Images') {
             steps {
