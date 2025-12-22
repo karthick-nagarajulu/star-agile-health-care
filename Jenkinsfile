@@ -1,46 +1,44 @@
 pipeline {
-    agent any  // Runs on any available agent (your EC2 with Docker/Jenkins)
+    agent any
 
     environment {
         // Docker image details
-        DOCKERHUB_REPO = 'sdfa777/capstone-health-project2'  // CHANGE THIS
+        DOCKERHUB_REPO = 'sdfa777/capstone-health-project2'
         DOCKER_IMAGE   = "${DOCKERHUB_REPO}:${BUILD_NUMBER}"
         DOCKER_LATEST  = "${DOCKERHUB_REPO}:latest"
 
-        // Docker Hub credentials ID (set in Jenkins Credentials)
-        DOCKERHUB_CREDENTIALS = 'dockerhub-credentials-id'  // Add in Jenkins > Credentials
+        // Credentials & Cluster Info
+        DOCKERHUB_CREDENTIALS = 'dockerhub-credentials-id'
+        AWS_REGION            = 'ap-south-1'
+        EKS_CLUSTER_NAME      = 'capstone-project'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checking out code from Git...'
                 checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building the application with Maven...'
-                sh 'mvn clean package -DskipTests'  // Skip tests here to speed up
+                sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
                 sh 'mvn test'
             }
             post {
                 always {
-                    junit 'target/surefire-reports/*.xml'  // Publish test results
+                    junit 'target/surefire-reports/*.xml'
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
                 sh """
                 docker build -t ${DOCKER_IMAGE} .
                 docker tag ${DOCKER_IMAGE} ${DOCKER_LATEST}
@@ -50,58 +48,58 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                echo 'Pushing image to Docker Hub...'
                 script {
-                    // Login to Docker Hub using credentials
-                     withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", 
+                    withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", 
                                                       usernameVariable: 'DOCKER_USER', 
                                                       passwordVariable: 'DOCKER_PASS')]) {
-                         sh '''
-                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                         docker push ${DOCKER_IMAGE}
-                         docker push ${DOCKER_LATEST}
-                         docker logout
-                         '''
+                        sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                        docker push ${DOCKER_LATEST}
+                        docker logout
+                        '''
+                    }
+                }
             }
         }
-    }
-}
+
+        stage('Deploy to EKS') {
+            steps {
+                script {
+                    // Update kubeconfig to point to your EKS cluster
+                    sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
                     
+                    // Update the deployment with the new image
+                    // Replace 'capstone-project' with your actual Deployment name if different
+                    sh "kubectl set image deployment/capstone-project capstone-app=${DOCKER_IMAGE} --record"
+                    
+                    // Check rollout status
+                    sh "kubectl rollout status deployment/capstone-project"
+                    
+                    echo "Deployment to EKS successful!"
+                }
+            }
+        }
 
         stage('Cleanup Local Images') {
             steps {
-                echo 'Cleaning up local Docker images...'
                 sh """
                 docker rmi ${DOCKER_IMAGE} || true
                 docker rmi ${DOCKER_LATEST} || true
                 """
             }
         }
-
-        // Optional: Deploy to EKS (uncomment if kubectl is configured)
-        /*
-        stage('Deploy to EKS') {
-            steps {
-                echo 'Deploying to EKS cluster...'
-                sh """
-                aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
-                kubectl set image deployment/your-app-deployment your-container=${DOCKER_IMAGE} -n your-namespace
-                kubectl rollout status deployment/your-app-deployment -n your-namespace
-                """
-            }
-        }
-        */
     }
 
     post {
         success {
-            echo 'Pipeline succeeded! Application built and pushed to Docker Hub.'
+            echo 'Pipeline succeeded!'
         }
         failure {
             echo 'Pipeline failed!'
         }
         always {
-            cleanWs()  // Clean workspace after build
+            cleanWs()
         }
     }
 }
