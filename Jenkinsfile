@@ -67,7 +67,7 @@ pipeline {
             steps {
                 script {
             // 1. Update Kubeconfig (This uses the EC2 IAM Role we just authorized)
-               sh "aws eks update-kubeconfig --region ap-south-1 --name capstone-project"
+               sh "aws eks update-kubeconfig --region ap-south-1 --name medicure-eks"
             
             // 2. Trigger the Rolling Update
             // This replaces the old image with the one we just built/pushed
