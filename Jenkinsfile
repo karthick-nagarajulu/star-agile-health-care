@@ -66,19 +66,16 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 script {
-            // 1. Update Kubeconfig (This uses the EC2 IAM Role we just authorized)
-               sh "aws eks update-kubeconfig --region ap-south-1 --name medicure-eks"
-            
-            // 2. Trigger the Rolling Update
-            // This replaces the old image with the one we just built/pushed
-               sh "kubectl set image deployment/health-star-agile health-app=${DOCKER_IMAGE}"
-            
-            // 3. Monitor the Rollout
-            // Jenkins will wait here until the new pods are Ready. 
-            // If the pods crash, Jenkins will fail the build here!
-               sh "kubectl rollout status deployment/health-star-agile"
-            
-               echo "🚀 Deployment to EKS capstone-project successful!"
+                    withAWS(region: "${AWS_REGION}", credentials: 'your-aws-creds-id') {
+                        sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
+
+                // Replace these with your actual deployment and container name
+                       sh "kubectl set image deployment/health-star-agile health-app=${DOCKER_IMAGE} --record"
+
+                       sh "kubectl rollout status deployment/health-star-agile --timeout=300s"
+
+                       echo "🚀 Deployment to EKS ${EKS_CLUSTER_NAME} successful!"
+            }
         }
     }
 }
