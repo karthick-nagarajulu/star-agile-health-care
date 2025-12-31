@@ -2,18 +2,18 @@ pipeline {
     agent any
 
     environment {
-        // Docker image details
         DOCKERHUB_REPO = 'sdfa777/health-star-agile-project2'
         DOCKER_IMAGE   = "${DOCKERHUB_REPO}:${BUILD_NUMBER}"
         DOCKER_LATEST  = "${DOCKERHUB_REPO}:latest"
 
-        // Credentials & Cluster Info
         DOCKERHUB_CREDENTIALS = 'dockerhub-credentials-id'
         AWS_REGION            = 'ap-south-1'
         EKS_CLUSTER_NAME      = 'medicure-eks'
+        K8S_NAMESPACE         = 'default'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -48,37 +48,36 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", 
-                                                      usernameVariable: 'DOCKER_USER', 
-                                                      passwordVariable: 'DOCKER_PASS')]) {
-                        sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${DOCKER_IMAGE}
-                        docker push ${DOCKER_LATEST}
-                        docker logout
-                        '''
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: DOCKERHUB_CREDENTIALS,
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                    echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                    docker push ${DOCKER_IMAGE}
+                    docker push ${DOCKER_LATEST}
+                    docker logout
+                    """
                 }
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                script {
-                    withAWS(region: "${AWS_REGION}", credentials: 'your-aws-creds-id') {
-                        sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
+                sh """
+                aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
 
-                // Replace these with your actual deployment and container name
-                       sh "kubectl set image deployment/health-star-agile health-app=${DOCKER_IMAGE} --record"
+                kubectl get deployment health-star-agile -n ${K8S_NAMESPACE}
 
-                       sh "kubectl rollout status deployment/health-star-agile --timeout=300s"
+                kubectl set image deployment/health-star-agile \
+                  health-app=${DOCKER_IMAGE} \
+                  -n ${K8S_NAMESPACE}
 
-                       echo "🚀 Deployment to EKS ${EKS_CLUSTER_NAME} successful!"
+                kubectl rollout status deployment/health-star-agile -n ${K8S_NAMESPACE}
+                """
             }
         }
-    }
-}
 
         stage('Cleanup Local Images') {
             steps {
@@ -92,10 +91,10 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline succeeded!'
+            echo '✅ Pipeline succeeded!'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo '❌ Pipeline failed!'
         }
         always {
             cleanWs()
