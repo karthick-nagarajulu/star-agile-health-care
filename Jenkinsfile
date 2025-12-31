@@ -3,14 +3,14 @@ pipeline {
 
     environment {
         // Docker image details
-        DOCKERHUB_REPO = 'sdfa777/capstone-health-project2'
+        DOCKERHUB_REPO = 'sdfa777/health-star-agile-project2'
         DOCKER_IMAGE   = "${DOCKERHUB_REPO}:${BUILD_NUMBER}"
         DOCKER_LATEST  = "${DOCKERHUB_REPO}:latest"
 
         // Credentials & Cluster Info
         DOCKERHUB_CREDENTIALS = 'dockerhub-credentials-id'
         AWS_REGION            = 'ap-south-1'
-        EKS_CLUSTER_NAME      = 'capstone-project'
+        EKS_CLUSTER_NAME      = 'medicure-eks'
     }
 
     stages {
@@ -71,12 +71,12 @@ pipeline {
             
             // 2. Trigger the Rolling Update
             // This replaces the old image with the one we just built/pushed
-               sh "kubectl set image deployment/capstone-project capstone-app=${DOCKER_IMAGE}"
+               sh "kubectl set image deployment/health-star-agile health-app=${DOCKER_IMAGE}"
             
             // 3. Monitor the Rollout
             // Jenkins will wait here until the new pods are Ready. 
             // If the pods crash, Jenkins will fail the build here!
-               sh "kubectl rollout status deployment/capstone-project"
+               sh "kubectl rollout status deployment/health-star-agile"
             
                echo "🚀 Deployment to EKS capstone-project successful!"
         }
