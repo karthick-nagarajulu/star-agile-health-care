@@ -63,6 +63,29 @@ stage('Build Docker Image') {
                 }
             }
         }
+        
+stage('Deploy to Test EC2') {
+    steps {
+        sshagent(credentials: ['test-ec2-ssh']) {
+            sh """
+            ssh -o StrictHostKeyChecking=no ubuntu@13.201.60.192 << 'EOF'
+              docker pull ${DOCKER_IMAGE}
+
+              docker stop health-app || true
+              docker rm health-app || true
+
+              docker run -d \\
+                --name health-app \\
+                -p 8081:8080 \\
+                ${DOCKER_IMAGE}
+
+              docker ps | grep health-app
+            EOF
+            """
+        }
+    }
+}
+
 
        stage('Deploy to EKS') {
            steps {
