@@ -74,7 +74,7 @@ pipeline {
                   health-app=${DOCKER_IMAGE} \
                   -n ${K8S_NAMESPACE}
 
-                kubectl rollout status deployment/health-star-agile -n ${K8S_NAMESPACE}
+                kubectl rollout status deployment/health-star-agile-project2 -n ${K8S_NAMESPACE}
                 """
             }
         }
