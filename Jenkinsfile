@@ -37,14 +37,15 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh """
-                docker build -t ${DOCKER_IMAGE} .
-                docker tag ${DOCKER_IMAGE} ${DOCKER_LATEST}
-                """
-            }
-        }
+stage('Build Docker Image') {
+    steps {
+        sh """
+        docker build -t ${DOCKER_IMAGE} .
+        docker tag ${DOCKER_IMAGE} ${DOCKER_LATEST}
+        docker images | grep health-star-agile
+        """
+    }
+}
 
         stage('Push to Docker Hub') {
             steps {
