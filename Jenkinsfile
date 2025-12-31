@@ -63,21 +63,20 @@ pipeline {
             }
         }
 
-        stage('Deploy to EKS') {
-            steps {
-                sh """
-                aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
+       stage('Deploy to EKS') {
+           steps {
+               sh """
+               aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
 
-                kubectl get deployment health-star-agile-project2 -n ${K8S_NAMESPACE}
+               kubectl set image deployment/health-star-agile \
+                 health-app=${DOCKER_IMAGE} \
+                 -n default
 
-                kubectl set image deployment/health-star-agile-project2 \
-                  health-app=${DOCKER_IMAGE} \
-                  -n ${K8S_NAMESPACE}
+               kubectl rollout status deployment/health-star-agile -n default
+               """
+    }
+}
 
-                kubectl rollout status deployment/health-star-agile-project2 -n ${K8S_NAMESPACE}
-                """
-            }
-        }
 
         stage('Cleanup Local Images') {
             steps {
