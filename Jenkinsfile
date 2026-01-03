@@ -65,7 +65,7 @@ pipeline {
         stage('Deploy to Worker') {
             steps {
                 // Ensure 'medicure-ssh-key' exists in Jenkins Credentials as 'SSH Username with private key'
-                sshagent(credentials: ['medicure-ssh-key']) {
+                sshagent(credentials: ['key']) {
                     sh """
 ssh -o StrictHostKeyChecking=no ubuntu@${env.TEST_EC2_IP} << 'EOF'
     docker pull ${DOCKER_LATEST}
