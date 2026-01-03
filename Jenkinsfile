@@ -66,14 +66,14 @@ stage('Build Docker Image') {
         
 stage('Deploy to Worker') {
     steps {
-        sshagent(credentials: ['key']) {
+        sshagent(credentials: ['medicure-ssh-key']) {
             sh """
-            ssh -o StrictHostKeyChecking=no ubuntu@3.110.225.62 << 'EOF'
+            ssh -o StrictHostKeyChecking=no ubuntu@${env.TEST_EC2_IP} << 'EOF'
                 docker pull sdfa777/health-project-2:latest
                 docker stop health-app || true
                 docker rm health-app || true
                 docker run -d --name health-app -p 8081:8080 sdfa777/health-project-2:latest
-            EOF
+EOF
             """
         }
     }
