@@ -67,7 +67,7 @@ stage('Build Docker Image') {
 stage('Deploy to jenkins') {
     steps {
         // Use the actual ID you created in Jenkins (e.g., 'ansible-key')
-        sshagent(credentials: ['ansible-key-id']) { 
+        sshagent(credentials: ['key']) { 
             sh """
             # Use 'ansible' here instead of 'ubuntu' if that is your target user
             ssh -o StrictHostKeyChecking=no ansible@${env.jenkins} << 'EOF'
