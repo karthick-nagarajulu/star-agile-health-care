@@ -67,7 +67,7 @@ pipeline {
                 // Ensure 'medicure-ssh-key' exists in Jenkins Credentials as 'SSH Username with private key'
                 sshagent(credentials: ['key']) {
                     sh """
-ssh -o StrictHostKeyChecking=no ubuntu@${env.TEST_EC2_IP} << 'EOF'
+ssh -o StrictHostKeyChecking=no ubuntu@${env.jenkins} << 'EOF'
     docker pull ${DOCKER_LATEST}
     docker stop health-app || true
     docker rm health-app || true
