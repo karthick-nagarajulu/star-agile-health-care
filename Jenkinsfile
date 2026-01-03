@@ -64,22 +64,15 @@ stage('Build Docker Image') {
             }
         }
         
-stage('Deploy to jenkins') {
+stage('Deploy to Worker') {
     steps {
-        // Use the actual ID you created in Jenkins (e.g., 'ansible-key')
-        sshagent(credentials: ['key']) { 
+        sshagent(credentials: ['key']) {
             sh """
-            # Use 'ansible' here instead of 'ubuntu' if that is your target user
-            ssh -o StrictHostKeyChecking=no ubuntu@3.110.225.62} << 'EOF'
-              docker pull ${DOCKER_IMAGE}
-
-              docker stop health-app || true
-              docker rm health-app || true
-
-              docker run -d \\
-                --name health-app \\
-                -p 8081:8080 \\
-                ${DOCKER_IMAGE}
+            ssh -o StrictHostKeyChecking=no ubuntu@3.110.225.62 << 'EOF'
+                docker pull sdfa777/health-project-2:latest
+                docker stop health-app || true
+                docker rm health-app || true
+                docker run -d --name health-app -p 8081:8080 sdfa777/health-project-2:latest
             EOF
             """
         }
