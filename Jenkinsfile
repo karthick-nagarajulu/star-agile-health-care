@@ -13,7 +13,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -37,15 +36,14 @@ pipeline {
             }
         }
 
-stage('Build Docker Image') {
-    steps {
-        sh """
-        docker build -t ${DOCKER_IMAGE} .
-        docker tag ${DOCKER_IMAGE} ${DOCKER_LATEST}
-        docker images | grep health
-        """
-    }
-}
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                docker build -t ${DOCKER_IMAGE} .
+                docker tag ${DOCKER_IMAGE} ${DOCKER_LATEST}
+                """
+            }
+        }
 
         stage('Push to Docker Hub') {
             steps {
@@ -64,36 +62,31 @@ stage('Build Docker Image') {
             }
         }
         
-stage('Deploy to Worker') {
-    steps {
-        sshagent(credentials: ['medicure-ssh-key']) {
-            sh """
-            ssh -o StrictHostKeyChecking=no ubuntu@${env.TEST_EC2_IP} << 'EOF'
-                docker pull sdfa777/health-project-2:latest
-                docker stop health-app || true
-                docker rm health-app || true
-                docker run -d --name health-app -p 8081:8080 sdfa777/health-project-2:latest
+        stage('Deploy to Worker') {
+            steps {
+                // Ensure 'medicure-ssh-key' exists in Jenkins Credentials as 'SSH Username with private key'
+                sshagent(credentials: ['medicure-ssh-key']) {
+                    sh """
+ssh -o StrictHostKeyChecking=no ubuntu@${env.TEST_EC2_IP} << 'EOF'
+    docker pull ${DOCKER_LATEST}
+    docker stop health-app || true
+    docker rm health-app || true
+    docker run -d --name health-app -p 8081:8080 ${DOCKER_LATEST}
 EOF
-            """
+                    """
+                }
+            }
         }
-    }
-}
 
-
-       stage('Deploy to EKS') {
-           steps {
-               sh """
-               aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
-
-               kubectl set image deployment/health-project-2 \
-                 health-app=${DOCKER_IMAGE} \
-                 -n default
-
-               kubectl rollout status deployment/health-project-2 -n default
-               """
-    }
-}
-
+        stage('Deploy to EKS') {
+            steps {
+                sh """
+                aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
+                kubectl set image deployment/health-project-2 health-app=${DOCKER_IMAGE} -n ${K8S_NAMESPACE}
+                kubectl rollout status deployment/health-project-2 -n ${K8S_NAMESPACE}
+                """
+            }
+        }
 
         stage('Cleanup Local Images') {
             steps {
