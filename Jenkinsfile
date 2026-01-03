@@ -79,18 +79,17 @@ EOF
         }
 stage('Deploy to K8s Master') {
     steps {
-        // Change 'string' to 'file' and 'variable' name to KUBECONFIG
         withCredentials([file(credentialsId: 'k8s-master-config', variable: 'KUBECONFIG')]) {
             sh """
-            # Use the $KUBECONFIG variable which points to the temporary file path
-            kubectl --kubeconfig=\$KUBECONFIG set image deployment/health-project-2 \
-                health-app=${DOCKER_IMAGE} -n default
-            
-            kubectl --kubeconfig=\$KUBECONFIG rollout status deployment/health-project-2 -n default
+            kubectl --kubeconfig=\$KUBECONFIG set image deployment/medicure-app \
+            health-app=sdfa777/health-project-2:${BUILD_NUMBER} -n default
+
+            kubectl --kubeconfig=\$KUBECONFIG rollout status deployment/medicure-app -n default
             """
         }
     }
 }
+
         stage('Cleanup Local Images') {
             steps {
                 sh """
