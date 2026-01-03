@@ -70,7 +70,7 @@ stage('Deploy to jenkins') {
         sshagent(credentials: ['key']) { 
             sh """
             # Use 'ansible' here instead of 'ubuntu' if that is your target user
-            ssh -o StrictHostKeyChecking=no ansible@${env.jenkins} << 'EOF'
+            ssh -o StrictHostKeyChecking=no ubuntu@3.110.225.62} << 'EOF'
               docker pull ${DOCKER_IMAGE}
 
               docker stop health-app || true
