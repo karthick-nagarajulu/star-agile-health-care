@@ -78,15 +78,27 @@ EOF
             }
         }
 
-        stage('Deploy to EKS') {
-            steps {
-                sh """
-                aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
-                kubectl set image deployment/health-project-2 health-app=${DOCKER_IMAGE} -n ${K8S_NAMESPACE}
-                kubectl rollout status deployment/health-project-2 -n ${K8S_NAMESPACE}
-                """
-            }
+       stage('Deploy to K8s Master') {
+    steps {
+        withCredentials([string(credentialsId: 'k8s-config-data', variable: 'KUBE_CONFIG_CONTENT')]) {
+            sh """
+            # Create a temporary config file for this session
+            echo "${KUBE_CONFIG_CONTENT}" > kubeconfig.yaml
+            
+            # Use kubectl to update the deployment on your Master Node
+            # Replace 'health-project-2' if your deployment name is different
+            kubectl --kubeconfig=kubeconfig.yaml set image deployment/health-project-2 \
+                health-app=${DOCKER_IMAGE} -n default
+            
+            # Check the status
+            kubectl --kubeconfig=kubeconfig.yaml rollout status deployment/health-project-2 -n default
+            
+            # Cleanup the temporary file
+            rm kubeconfig.yaml
+            """
         }
+    }
+}
 
         stage('Cleanup Local Images') {
             steps {
