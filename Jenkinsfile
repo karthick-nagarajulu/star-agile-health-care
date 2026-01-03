@@ -80,7 +80,7 @@ EOF
 stage('Deploy to K8s Master') {
     steps {
         // Use the 'Secret file' kind if possible, otherwise use this fix for 'Secret text'
-        withCredentials([string(credentialsId: 'k8s-config-data', variable: 'KUBE_CONFIG_CONTENT')]) {
+        withCredentials([string(credentialsId: 'k8s-master-config', variable: 'KUBE_CONFIG_CONTENT')]) {
             sh '''
                 # Use a HEREDOC to write the content safely to avoid YAML formatting errors
                 cat <<EOF > kubeconfig.yaml
