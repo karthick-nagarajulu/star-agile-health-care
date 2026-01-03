@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_REPO = 'sdfa777/health-star-agile-project2'
+        DOCKERHUB_REPO = 'sdfa777/health-project2'
         DOCKER_IMAGE   = "${DOCKERHUB_REPO}:${BUILD_NUMBER}"
         DOCKER_LATEST  = "${DOCKERHUB_REPO}:latest"
 
         DOCKERHUB_CREDENTIALS = 'dockerhub-credentials-id'
         AWS_REGION            = 'ap-south-1'
-        EKS_CLUSTER_NAME      = 'medicure-eks'
+        EKS_CLUSTER_NAME      = 'kubernetes'
         K8S_NAMESPACE         = 'default'
     }
 
@@ -42,7 +42,7 @@ stage('Build Docker Image') {
         sh """
         docker build -t ${DOCKER_IMAGE} .
         docker tag ${DOCKER_IMAGE} ${DOCKER_LATEST}
-        docker images | grep health-star-agile
+        docker images | grep health
         """
     }
 }
@@ -92,11 +92,11 @@ stage('Deploy to Test EC2') {
                sh """
                aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
 
-               kubectl set image deployment/health-star-agile \
+               kubectl set image deployment/health-project-2 \
                  health-app=${DOCKER_IMAGE} \
                  -n default
 
-               kubectl rollout status deployment/health-star-agile -n default
+               kubectl rollout status deployment/health-project-2 -n default
                """
     }
 }
