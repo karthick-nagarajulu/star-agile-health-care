@@ -66,9 +66,11 @@ stage('Build Docker Image') {
         
 stage('Deploy to Test EC2') {
     steps {
-        sshagent(credentials: ['test-ec2-ssh']) {
+        // Use the actual ID you created in Jenkins (e.g., 'ansible-key')
+        sshagent(credentials: ['ansible-key']) { 
             sh """
-            ssh -o StrictHostKeyChecking=no ubuntu@13.201.60.192 << 'EOF'
+            # Use 'ansible' here instead of 'ubuntu' if that is your target user
+            ssh -o StrictHostKeyChecking=no ansible@${env.jenkins} << 'EOF'
               docker pull ${DOCKER_IMAGE}
 
               docker stop health-app || true
@@ -78,8 +80,6 @@ stage('Deploy to Test EC2') {
                 --name health-app \\
                 -p 8081:8080 \\
                 ${DOCKER_IMAGE}
-
-              docker ps | grep health-app
             EOF
             """
         }
